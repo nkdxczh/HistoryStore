@@ -55,7 +55,7 @@ class StoreWithHistory:
         self.map[key].append(t)
         self.cache[key].do(t)
 
-    def deleteKey(self, key):
+    def delKey(self, key):
         self.clock += 1
         if key not in self.map:
             return
@@ -67,7 +67,7 @@ class StoreWithHistory:
         self.cache[key].set.clear()
         self.clock += 1
 
-    def deleteValue(self, key, value):
+    def delVal(self, key, value):
         if key not in self.map or value not in self.cache[key].set:
             self.clock += 1
             return
@@ -121,11 +121,11 @@ if __name__ == '__main__':
     store.put("A","e") 
     assert store.get("A") == ["c", "e"]
     assert store.getAt("A", 2) == ["c"]
-    store.deleteKey("A") 
+    store.delKey("A") 
     assert store.get("A") == []
     assert store.getAt("A",5) == ["c", "e"] 
     store.put("B","f") 
-    store.deleteValue("B","d") 
+    store.delVal("B","d") 
     assert store.get("B") == ["f"]
     assert store.diff("A", 1, 2) == []
     assert store.diff("A", 3, 5) == []
