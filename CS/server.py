@@ -14,8 +14,11 @@ from thrift.server import TServer
 import socket
 
 import core as core
+import cache as cache
 
 store = core.StoreWithHistory()
+#the cache layer for getAt function
+getAtCache = cache.GetAtCache()
 
 class HSHandler:
     def __init__(self):
@@ -28,7 +31,27 @@ class HSHandler:
         return store.get(key)
 
     def getAt(self, key, time):
-        return store.getAt(key, time)
+        #get the closet result from cache
+        closetTime, vals = getAtCache.getAt(key, time)
+        if closetTime == time:
+            return vals
+        elif closetTime == -1:
+            res = store.getAt(key, time)
+            #save the result to cache
+            getAtCache.put(key, time, res)
+            return res
+        else:
+            #get the diff between closetTime and target time
+            diff = store.diff(key, min(closetTime, time), max(closetTime, time))
+            res = set(vals)
+            #merge the two sets
+            for val in diff:
+                if val in res:
+                    res.remove(val)
+                else:
+                    res.add(val)
+            getAtCache.put(key, time, res)
+            return res
 
     def delKey(self, key):
         store.delKey(key)

@@ -29,63 +29,63 @@ class Cache:
 
 class StoreWithHistory:
     '''
-    map: save all history (transactions)
+    history: save all history (transactions)
     cache: save the current content for each key
     clock: record the current time, increase by each operation
     '''
     def __init__(self):
-        self.map = dict()
+        self.history = dict()
         self.cache = dict()
         self.clock = 0
 
     def get(self, key):
         self.clock += 1
-        if key not in self.map:
+        if key not in self.history:
             return []
         return list(self.cache[key].set)
 
     def put(self, key, value):
-        if key not in self.map:
-            self.map[key] = [] 
+        if key not in self.history:
+            self.history[key] = [] 
             self.cache[key] = Cache()
 
         #generate an add transaction
         t = Transaction(self.clock, value,'+')
         self.clock += 1
-        self.map[key].append(t)
+        self.history[key].append(t)
         self.cache[key].do(t)
 
     def delKey(self, key):
         self.clock += 1
-        if key not in self.map:
+        if key not in self.history:
             return
 
         #generate delete transaction for all element
         for ele in self.cache[key].set:
             t = Transaction(self.clock, ele, '-')
-            self.map[key].append(t)
+            self.history[key].append(t)
         self.cache[key].set.clear()
         self.clock += 1
 
     def delVal(self, key, value):
-        if key not in self.map or value not in self.cache[key].set:
+        if key not in self.history or value not in self.cache[key].set:
             self.clock += 1
             return
 
         #generate a delete transaction
         t = Transaction(self.clock, value,'-')
         self.clock += 1
-        self.map[key].append(t)
+        self.history[key].append(t)
         self.cache[key].do(t)
 
     def getAt(self, key, time):
         self.clock += 1
-        if key not in self.map:
+        if key not in self.history:
             return []
 
         res = Cache()
         #redo all transactions from beginning to time
-        for t in self.map[key]:
+        for t in self.history[key]:
             if t.time > time:
                 break
             res.do(t)
@@ -93,12 +93,12 @@ class StoreWithHistory:
 
     def diff(self, key, time1, time2):
         self.clock += 1
-        if key not in self.map:
+        if key not in self.history:
             return []
 
         res = Cache()
         #redo all transactions from time1 to time2
-        for t in self.map[key]:
+        for t in self.history[key]:
             if t.time > time1 and t.time <=time2:
                 res.do(t)
 
